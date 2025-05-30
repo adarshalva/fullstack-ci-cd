@@ -1,0 +1,200 @@
+"<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ExploreNow - Travel Booking</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+    }
+    body {
+      line-height: 1.6;
+      color: #333;
+    }
+    header {
+      background: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e') no-repeat center center/cover;
+      color: white;
+      height: 90vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      flex-direction: column;
+    }
+    header h1 {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+    header p {
+      font-size: 1.2rem;
+      margin-bottom: 2rem;
+    }
+    .search-box {
+      background: rgba(255, 255, 255, 0.95);
+      padding: 1rem;
+      border-radius: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      max-width: 700px;
+      margin: auto;
+    }
+    .search-box input, .search-box select, .search-box button {
+      flex: 1 1 30%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    .search-box button {
+      background: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    .search-box button:hover {
+      background: #0056b3;
+    }
+    .destinations {
+      padding: 3rem 1rem;
+      background: #f9f9f9;
+      text-align: center;
+    }
+    .destinations h2 {
+      margin-bottom: 2rem;
+      font-size: 2rem;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+    }
+    .card {
+      background: white;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .card img {
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+    }
+    .card h3 {
+      padding: 1rem;
+    }
+    footer {
+      background: #333;
+      color: white;
+      padding: 2rem 1rem;
+      text-align: center;
+    }
+    footer a {
+      color: #ddd;
+      text-decoration: none;
+      margin: 0 10px;
+    }
+    @media (max-width: 600px) {
+      header h1 {
+        font-size: 2rem;
+      }
+      .search-box input, .search-box select, .search-box button {
+        flex: 1 1 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>ExploreNow</h1>
+    <p>Your journey begins here. Book your next trip today.</p>
+    <div class="search-box">
+      <input type="text" id="destination" placeholder="Destination" />
+      <input type="date" id="date" />
+      <input type="number" id="guests" placeholder="Guests" min="1" />
+      <select id="budget">
+        <option value="">Select Budget</option>
+        <option value="low">Low</option>
+        <option value="medium">Medium</option>
+        <option value="high">High</option>
+      </select>
+      <select id="activity">
+        <option value="">Select Activity</option>
+        <option value="beach">Beach</option>
+        <option value="adventure">Adventure</option>
+        <option value="city">City Tour</option>
+        <option value="nature">Nature</option>
+      </select>
+      <button onclick="handleSearch()">Search</button>
+    </div>
+  </header>
+
+  <section class="destinations">
+    <h2>Search Results</h2>
+    <div class="grid" id="results"></div>
+  </section>
+
+  <footer>
+    <p>&copy; 2025 ExploreNow. All rights reserved.</p>
+    <p>
+      <a href="#">Privacy Policy</a> |
+      <a href="#">Terms of Service</a> |
+      <a href="#">Contact</a>
+    </p>
+  </footer>
+
+  <script>
+    const trips = [
+      { name: "Paris, France", img: "https://source.unsplash.com/400x300/?paris", activity: "city", budget: "high" },
+      { name: "Bali, Indonesia", img: "https://source.unsplash.com/400x300/?bali", activity: "beach", budget: "medium" },
+      { name: "New York, USA", img: "https://source.unsplash.com/400x300/?newyork", activity: "city", budget: "high" },
+      { name: "Tokyo, Japan", img: "https://source.unsplash.com/400x300/?tokyo", activity: "city", budget: "high" },
+      { name: "Swiss Alps", img: "https://source.unsplash.com/400x300/?switzerland,mountains", activity: "adventure", budget: "high" },
+      { name: "Kerala, India", img: "https://source.unsplash.com/400x300/?kerala,backwaters", activity: "nature", budget: "low" },
+      { name: "Goa, India", img: "https://source.unsplash.com/400x300/?goa,beach", activity: "beach", budget: "medium" }
+    ];
+
+    function handleSearch() {
+      const destination = document.getElementById('destination').value.toLowerCase().trim();
+      const date = document.getElementById('date').value;
+      const guests = parseInt(document.getElementById('guests').value);
+      const budget = document.getElementById('budget').value;
+      const activity = document.getElementById('activity').value;
+
+      if (!date || !guests || guests <= 0) {
+        alert('Please enter a valid date and number of guests!');
+        return;
+      }
+
+      const filtered = trips.filter(trip => {
+        const matchesDestination = !destination || trip.name.toLowerCase().includes(destination);
+        const matchesBudget = !budget || trip.budget === budget;
+        const matchesActivity = !activity || trip.activity === activity;
+        return matchesDestination && matchesBudget && matchesActivity;
+      });
+
+      const resultsContainer = document.getElementById('results');
+      resultsContainer.innerHTML = '';
+
+      if (filtered.length === 0) {
+        resultsContainer.innerHTML = '<p>No results found. Try adjusting your filters.</p>';
+        return;
+      }
+
+      filtered.forEach(trip => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+          <img src="${trip.img}" alt="${trip.name}">
+          <h3>${trip.name}</h3>
+        `;
+        resultsContainer.appendChild(card);
+      });
+    }
+  </script>
+</body>
+</html>
+
