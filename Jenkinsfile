@@ -3,7 +3,7 @@ pipeline {
 
     tools {
         jdk 'jdk24'
-        sonar 'Sonar_Scanner'  // Define SonarScanner tool installation name here
+        sonarRunner 'Sonar_Scanner'  // Define SonarScanner tool installation name here
     }
 
     environment {
