@@ -12,14 +12,15 @@ pipeline {
 
     stages {
         stage('SonarQube Analysis') {
-            steps {
-                withEnv(["JAVA_HOME=${env.JAVA_HOME}", "PATH+JAVA=${env.JAVA_HOME}/bin"]) {
-                    withSonarQubeEnv('sq1') {
-                        sh "/var/jenkins_home/tools/hudson.plugins.sonar.SonarRunnerInstallation/Sonar_Scanner/bin/sonar-scanner -Dsonar.login=${SONAR_TOKEN}"
-                    }
-                }
+    steps {
+        withSonarQubeEnv('sq1') {
+            script {
+                def scannerHome = tool 'Sonar_Scanner'
+                sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=fullstack-todo-app -Dsonar.sources=. -Dsonar.login=${SONAR_TOKEN}"
             }
         }
+    }
+}
 
         stage('Build & Push Docker Image') {
             steps {
