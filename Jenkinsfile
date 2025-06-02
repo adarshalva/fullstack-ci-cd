@@ -13,22 +13,26 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git url: 'https://github.com/adarshalva/fullstack-ci-cd.git',
-                    branch: 'main',
-                    credentialsId: 'github-token'
+                git url: 'https://github.com/adarshalva/fullstack-ci-cd.git', branch: 'main', credentialsId: 'github-token'
             }
         }
 
         stage('SonarQube Analysis') {
-            environment {
-                SCANNER_HOME = tool 'Sonar_Scanner'
-                JAVA_HOME = tool 'jdk24'
-                PATH = "${env.SCANNER_HOME}/bin:${env.JAVA_HOME}/bin:${env.PATH}"
-            }
             steps {
                 withSonarQubeEnv('sq1') {
-                    sh 'java -version' // Optional: Verify Java is available
-                    sh 'sonar-scanner'
+                    script {
+                        // Get the paths for both SonarScanner and the JDK
+                        def scannerHome = tool name: 'Sonar_Scanner'
+                        def jdkHome = tool name: 'jdk24'
+                        // Set JAVA_HOME and PATH for the sonar-scanner command
+                        sh """
+                            export JAVA_HOME=${jdkHome}
+                            export PATH=\$JAVA_HOME/bin:\$PATH
+                            export PATH=${scannerHome}/bin:\$PATH
+                            java -version
+                            sonar-scanner
+                        """
+                    }
                 }
             }
         }
