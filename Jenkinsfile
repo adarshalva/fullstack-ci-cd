@@ -6,7 +6,6 @@ pipeline {
     }
 
     environment {
-        SCANNER_HOME = tool 'Sonar_Scanner'
         DOCKERHUB_CREDENTIALS = 'dockerhub'
         IMAGE_NAME = 'adarshalva/fullstack-todo-backend'
     }
@@ -21,9 +20,15 @@ pipeline {
         }
 
         stage('SonarQube Analysis') {
+            environment {
+                SCANNER_HOME = tool 'Sonar_Scanner'
+                JAVA_HOME = tool 'jdk24'
+                PATH = "${env.SCANNER_HOME}/bin:${env.JAVA_HOME}/bin:${env.PATH}"
+            }
             steps {
                 withSonarQubeEnv('sq1') {
-                    sh "${SCANNER_HOME}/bin/sonar-scanner"
+                    sh 'java -version' // Optional: Verify Java is available
+                    sh 'sonar-scanner'
                 }
             }
         }
