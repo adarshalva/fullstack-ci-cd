@@ -23,10 +23,9 @@ pipeline {
                     script {
                         // Get the paths for both SonarScanner and the JDK
                         def scannerHome = tool name: 'Sonar_Scanner'
-                        def jdkHome = tool name: 'jdk24'
                         // Set JAVA_HOME and PATH for the sonar-scanner command
                         sh """
-                            export JAVA_HOME=${jdkHome}
+                            export JAVA_HOME=/opt/java/openjdk
                             export PATH=\$JAVA_HOME/bin:\$PATH
                             export PATH=${scannerHome}/bin:\$PATH
                             java -version
