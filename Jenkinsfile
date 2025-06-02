@@ -1,72 +1,72 @@
-pipeline {  
-    agent any 
+pipeline {
+    agent any
 
-    tools { 
-        jdk 'jdk24' 
-    } 
+    environment {
+        // Java path for SonarQube scanner
+        JAVA_HOME = "/opt/java/openjdk"
+        PATH = "${env.JAVA_HOME}/bin:${env.PATH}"
+        
+        // Docker registry info - replace with your values
+        DOCKER_REGISTRY = "your-docker-registry"
+        IMAGE_NAME = "your-image-name"
+        IMAGE_TAG = "latest"
 
-    environment { 
-        SCANNER_HOME = tool 'Sonar_Scanner' 
-        DOCKERHUB_CREDENTIALS = 'dockerhub' 
-        IMAGE_NAME = 'adarshalva/fullstack-todo-backend' 
-    } 
+        // SonarQube token stored as Jenkins secret credential (replace 'sonar-token' with your credential ID)
+        SONAR_TOKEN = credentials('sonar-token')
+    }
 
-    stages { 
-        stage('Checkout') { 
-            steps { 
-                git url: 'https://github.com/adarshalva/fullstack-ci-cd.git', 
-                    branch: 'main', 
-                    credentialsId: 'github-token' 
-            } 
-        } 
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
 
-        stage('SonarQube Analysis') { 
-            steps { 
-                withSonarQubeEnv('sq1') { 
-                    sh "${SCANNER_HOME}/bin/sonar-scanner"
-                } 
-            } 
-        } 
+        stage('SonarQube Analysis') {
+            steps {
+                withEnv(["JAVA_HOME=${env.JAVA_HOME}", "PATH+JAVA=${env.JAVA_HOME}/bin"]) {
+                    withSonarQubeEnv('sq1') {
+                        sh '/var/jenkins_home/tools/hudson.plugins.sonar.SonarRunnerInstallation/Sonar_Scanner/bin/sonar-scanner -Dsonar.login=${SONAR_TOKEN}'
+                    }
+                }
+            }
+        }
 
-        stage('OWASP Dependency Check') { 
-            steps { 
-                dependencyCheck additionalArguments: '--scan ./backend', odcInstallation: 'DP' 
-                dependencyCheckPublisher pattern: '**/dependency-check-report.xml' 
-            } 
-        } 
+        stage('Build & Push Docker Image') {
+            steps {
+                script {
+                    docker.withRegistry("https://${env.DOCKER_REGISTRY}", 'docker-registry-credentials') {
+                        def appImage = docker.build("${env.DOCKER_REGISTRY}/${env.IMAGE_NAME}:${env.IMAGE_TAG}")
+                        appImage.push()
+                    }
+                }
+            }
+        }
 
-        stage('Build & Push Docker Image') { 
-            steps { 
-                script { 
-                    def app = docker.build("${IMAGE_NAME}:latest", "backend")
-                    docker.withRegistry('https://index.docker.io/v1/', DOCKERHUB_CREDENTIALS) {
-                        app.push("latest")
-                    } 
-                } 
-            } 
-        } 
+        stage('Trivy Vulnerability Scan') {
+            steps {
+                script {
+                    // Scan the pushed image using trivy
+                    sh "trivy image --exit-code 1 --severity HIGH,CRITICAL ${env.DOCKER_REGISTRY}/${env.IMAGE_NAME}:${env.IMAGE_TAG}"
+                }
+            }
+        }
 
-        stage('Trivy Vulnerability Scan') { 
-            steps { 
-                script { 
-                    sh ''' 
-                        mkdir -p trivy-bin 
-                        curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b trivy-bin v0.62.0 
-                        ./trivy-bin/trivy image --exit-code 0 --severity HIGH,CRITICAL ${IMAGE_NAME}:latest || true 
-                    ''' 
-                } 
-            } 
-        } 
+        stage('Run Docker Container') {
+            steps {
+                script {
+                    sh "docker run -d -p 4000:4000 --name ${env.IMAGE_NAME} ${env.DOCKER_REGISTRY}/${env.IMAGE_NAME}:${env.IMAGE_TAG}"
+                }
+            }
+        }
+    }
 
-        stage('Run Docker Container') { 
-            steps { 
-                sh ''' 
-                    docker stop my-sample-app || true 
-                    docker rm my-sample-app || true 
-                    docker run -d -p 4000:4000 --name my-sample-app ${IMAGE_NAME}:latest 
-                ''' 
-            } 
-        } 
-    } 
+    post {
+        always {
+            echo 'Cleaning up...'
+            sh "docker rm -f ${env.IMAGE_NAME} || true"
+        }
+    }
 }
+
 
