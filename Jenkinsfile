@@ -1,5 +1,10 @@
 pipeline {
     agent any
+    
+    options {
+    skipDefaultCheckout()
+    }
+
 
     environment {
         JAVA_HOME = "/opt/java/openjdk"
