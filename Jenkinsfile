@@ -11,17 +11,16 @@ pipeline {
     }
 
     stages {
-       stage('SonarQube Analysis') {
-    steps {
-        withSonarQubeEnv('sq1') {
-            script {
-                def scannerHome = tool 'Sonar_Scanner'
-                sh "${scannerHome}/bin/sonar-scanner -Dsonar.login=${SONAR_TOKEN}"
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv('sq1') {
+                    script {
+                        def scannerHome = tool 'Sonar_Scanner'
+                        sh "${scannerHome}/bin/sonar-scanner -Dsonar.login=${SONAR_TOKEN}"
+                    }
+                }
             }
         }
-    }
-}
-
 
         stage('Build & Push Docker Image') {
             steps {
@@ -55,10 +54,13 @@ pipeline {
     post {
         always {
             echo 'Cleaning up...'
-            sh "docker rm -f ${env.IMAGE_NAME} || true"
+            script {
+                sh "docker rm -f ${env.IMAGE_NAME} || true"
+            }
         }
     }
 }
+
 
 
 
