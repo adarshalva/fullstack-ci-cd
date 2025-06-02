@@ -11,16 +11,17 @@ pipeline {
     }
 
     stages {
-        stage('SonarQube Analysis') {
+       stage('SonarQube Analysis') {
     steps {
         withSonarQubeEnv('sq1') {
             script {
                 def scannerHome = tool 'Sonar_Scanner'
-                sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=fullstack-todo-app -Dsonar.sources=. -Dsonar.login=${SONAR_TOKEN}"
+                sh "${scannerHome}/bin/sonar-scanner -Dsonar.login=${SONAR_TOKEN}"
             }
         }
     }
 }
+
 
         stage('Build & Push Docker Image') {
             steps {
