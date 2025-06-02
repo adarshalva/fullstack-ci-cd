@@ -2,19 +2,15 @@ pipeline {
     agent any
 
     environment {
-        // Java path for SonarQube scanner
         JAVA_HOME = "/opt/java/openjdk"
         PATH = "${env.JAVA_HOME}/bin:${env.PATH}"
-        
-        // Docker registry info
         DOCKER_REGISTRY = "docker.io/adarshalva"
         IMAGE_NAME = "fullstack-app"
         IMAGE_TAG = "latest"
-
-        // SonarQube token stored as Jenkins secret credential
         SONAR_TOKEN = credentials('sonar-token')
     }
 
+    stages {
         stage('SonarQube Analysis') {
             steps {
                 withEnv(["JAVA_HOME=${env.JAVA_HOME}", "PATH+JAVA=${env.JAVA_HOME}/bin"]) {
@@ -47,7 +43,7 @@ pipeline {
         stage('Run Docker Container') {
             steps {
                 script {
-                    sh "docker rm -f ${env.IMAGE_NAME} || true" // Remove old container if exists
+                    sh "docker rm -f ${env.IMAGE_NAME} || true"
                     sh "docker run -d -p 4000:4000 --name ${env.IMAGE_NAME} ${env.DOCKER_REGISTRY}/${env.IMAGE_NAME}:${env.IMAGE_TAG}"
                 }
             }
@@ -61,6 +57,7 @@ pipeline {
         }
     }
 }
+
 
 
 
