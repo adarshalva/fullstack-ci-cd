@@ -6,19 +6,20 @@ pipeline {
         JAVA_HOME = "/opt/java/openjdk"
         PATH = "${env.JAVA_HOME}/bin:${env.PATH}"
         
-        // Docker registry info - replace with your values
-        DOCKER_REGISTRY = "your-docker-registry"
-        IMAGE_NAME = "your-image-name"
+        // Docker registry info
+        DOCKER_REGISTRY = "docker.io/adarshalva"
+        IMAGE_NAME = "fullstack-app"
         IMAGE_TAG = "latest"
 
-        // SonarQube token stored as Jenkins secret credential (replace 'sonar-token' with your credential ID)
+        // SonarQube token stored as Jenkins secret credential
         SONAR_TOKEN = credentials('sonar-token')
     }
 
     stages {
-        stage('Checkout') {
+        stage('Clean Workspace & Checkout') {
             steps {
-                checkout scm
+                cleanWs()
+                git branch: 'main', url: 'https://github.com/adarshalva/fullstack-ci-cd.git'
             }
         }
 
@@ -26,7 +27,7 @@ pipeline {
             steps {
                 withEnv(["JAVA_HOME=${env.JAVA_HOME}", "PATH+JAVA=${env.JAVA_HOME}/bin"]) {
                     withSonarQubeEnv('sq1') {
-                        sh '/var/jenkins_home/tools/hudson.plugins.sonar.SonarRunnerInstallation/Sonar_Scanner/bin/sonar-scanner -Dsonar.login=${SONAR_TOKEN}'
+                        sh "/var/jenkins_home/tools/hudson.plugins.sonar.SonarRunnerInstallation/Sonar_Scanner/bin/sonar-scanner -Dsonar.login=${SONAR_TOKEN}"
                     }
                 }
             }
@@ -46,7 +47,6 @@ pipeline {
         stage('Trivy Vulnerability Scan') {
             steps {
                 script {
-                    // Scan the pushed image using trivy
                     sh "trivy image --exit-code 1 --severity HIGH,CRITICAL ${env.DOCKER_REGISTRY}/${env.IMAGE_NAME}:${env.IMAGE_TAG}"
                 }
             }
@@ -55,6 +55,7 @@ pipeline {
         stage('Run Docker Container') {
             steps {
                 script {
+                    sh "docker rm -f ${env.IMAGE_NAME} || true" // Remove old container if exists
                     sh "docker run -d -p 4000:4000 --name ${env.IMAGE_NAME} ${env.DOCKER_REGISTRY}/${env.IMAGE_NAME}:${env.IMAGE_TAG}"
                 }
             }
@@ -68,5 +69,6 @@ pipeline {
         }
     }
 }
+
 
 
