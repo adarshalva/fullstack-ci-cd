@@ -3,11 +3,15 @@ pipeline {
 
     tools {
         jdk 'jdk24'
+        sonarScanner 'Sonar_Scanner'  // Define SonarScanner tool installation name here
     }
 
     environment {
         DOCKERHUB_CREDENTIALS = 'dockerhub'
         IMAGE_NAME = 'adarshalva/fullstack-todo-backend'
+        SONAR_PROJECT_KEY = 'fullstack-todo-backend'          // Your SonarQube project key
+        SONAR_HOST_URL = 'http://localhost:9000'  // SonarQube server URL (set in Jenkins global config or replace here)
+        SONAR_AUTH_TOKEN = credentials('sonar-token')         // Jenkins credential ID for SonarQube token
     }
 
     stages {
@@ -21,15 +25,16 @@ pipeline {
             steps {
                 withSonarQubeEnv('sq1') {
                     script {
-                        // Get the paths for both SonarScanner and the JDK
                         def scannerHome = tool name: 'Sonar_Scanner'
-                        // Set JAVA_HOME and PATH for the sonar-scanner command
                         sh """
                             export JAVA_HOME=/opt/java/openjdk
                             export PATH=\$JAVA_HOME/bin:\$PATH
                             export PATH=${scannerHome}/bin:\$PATH
-                            java -version
-                            sonar-scanner
+                            sonar-scanner \
+                              -Dsonar.projectKey=${env.SONAR_PROJECT_KEY} \
+                              -Dsonar.sources=backend \
+                              -Dsonar.host.url=${env.SONAR_HOST_URL} \
+                              -Dsonar.login=${env.SONAR_AUTH_TOKEN}
                         """
                     }
                 }
