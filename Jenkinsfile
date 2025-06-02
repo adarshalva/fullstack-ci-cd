@@ -15,14 +15,6 @@ pipeline {
         SONAR_TOKEN = credentials('sonar-token')
     }
 
-    stages {
-        stage('Clean Workspace & Checkout') {
-            steps {
-                cleanWs()
-                git branch: 'main', url: 'https://github.com/adarshalva/fullstack-ci-cd.git'
-            }
-        }
-
         stage('SonarQube Analysis') {
             steps {
                 withEnv(["JAVA_HOME=${env.JAVA_HOME}", "PATH+JAVA=${env.JAVA_HOME}/bin"]) {
