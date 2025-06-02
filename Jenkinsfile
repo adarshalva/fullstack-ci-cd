@@ -14,7 +14,7 @@ pipeline {
     stages { 
         stage('Checkout') { 
             steps { 
-                git url: 'https://github.com/adarshalva/https://github.com/adarshalva/fullstack-ci-cd.git', 
+                git url: 'https://github.com/adarshalva/fullstack-ci-cd.git', 
                     branch: 'main', 
                     credentialsId: 'github-token' 
             } 
