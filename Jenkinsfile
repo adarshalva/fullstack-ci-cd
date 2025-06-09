@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        SONAR_TOKEN = credentials('sonar-token')
+        SONAR_TOKEN = credentials('sonar-token') // SonarQube token
         IMAGE_NAME = 'adarshalva/fullstack-todo-backend'
         PATH = "/usr/local/bin:/usr/bin:/bin"
         JAVA_HOME = "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home"
@@ -38,10 +38,11 @@ pipeline {
 
         stage('Trivy Vulnerability Scan') {
             steps {
-                // Run Trivy as a docker container
                 sh """
                     docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
-                    aquasec/trivy:latest image --exit-code 1 --severity HIGH,CRITICAL ${IMAGE_NAME}:latest
+                    -v $(pwd):/root/.cache/ aquasec/trivy:latest \
+                    image --exit-code 1 --severity HIGH,CRITICAL \
+                    -f table -o trivy-report.txt ${IMAGE_NAME}:latest
                 """
             }
         }
@@ -60,9 +61,11 @@ pipeline {
         always {
             echo 'Cleaning up...'
             sh 'docker rm -f fullstack-app || true'
+            archiveArtifacts artifacts: 'trivy-report.txt', fingerprint: true
         }
     }
 }
+
 
 
 
