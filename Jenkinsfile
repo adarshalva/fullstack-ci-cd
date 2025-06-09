@@ -7,7 +7,7 @@ pipeline {
 
     environment {
         JAVA_HOME = "/opt/java/openjdk"
-        PATH = "${env.JAVA_HOME}/bin:${env.PATH}"
+        PATH = "/usr/local/bin:/bin:/usr/sbin:/usr/bin:/sbin:/usr/local/sbin:${env.PATH}"
         DOCKER_REGISTRY = "docker.io/adarshalva"
         IMAGE_NAME = "fullstack-app"
         IMAGE_TAG = "latest"
