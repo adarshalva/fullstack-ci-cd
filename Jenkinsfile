@@ -28,13 +28,11 @@ pipeline {
             }
         }
 
-        stage('Build & Push Docker Image') {
+        stage('Build Docker Image') {
             steps {
-                sh """
-                    docker build -t ${IMAGE_NAME}:latest .
-                    docker push ${IMAGE_NAME}:latest
-                """
-            }
+                // Run docker build inside backend folder
+                dir('backend') {
+                    sh 'docker build -t $IMAGE_NAME .'
         }
 
         stage('Trivy Vulnerability Scan') {
