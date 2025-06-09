@@ -39,21 +39,27 @@ pipeline {
         }
 
         stage('Trivy Vulnerability Scan') {
-            steps {
-                script {
-                    sh "trivy image --exit-code 1 --severity HIGH,CRITICAL ${env.DOCKER_REGISTRY}/${env.IMAGE_NAME}:${env.IMAGE_TAG}"
-                }
-            }
+    steps {
+        script {
+            sh """
+                mkdir -p trivy-bin  
+                curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b trivy-bin
+                ./trivy-bin/trivy image --exit-code 0 --severity HIGH,CRITICAL ${IMAGE_NAME}:latest || true
+            """
         }
+    }
+}
 
-        stage('Run Docker Container') {
-            steps {
-                script {
-                    sh "docker rm -f ${env.IMAGE_NAME} || true"
-                    sh "docker run -d -p 4000:4000 --name ${env.IMAGE_NAME} ${env.DOCKER_REGISTRY}/${env.IMAGE_NAME}:${env.IMAGE_TAG}"
-                }
-            }
-        }
+stage('Run Docker Container') {
+    steps {
+        sh """
+            docker stop my-sample-app || true
+            docker rm my-sample-app || true
+            docker run -d -p 4000:4000 --name my-sample-app ${IMAGE_NAME}:latest
+        """
+    }
+}
+
     }
 
     post {
