@@ -1,71 +1,55 @@
 pipeline {
     agent any
-    
-    options {
-        skipDefaultCheckout()
-    }
 
     environment {
-        JAVA_HOME = "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home" // set your actual Java 21 path here
-        PATH = "${env.JAVA_HOME}/bin:/usr/local/bin:${env.PATH}"
-        DOCKER_REGISTRY = "docker.io/adarshalva"
-        IMAGE_NAME = "fullstack-app"
-        IMAGE_TAG = "latest"
-        SONAR_TOKEN = credentials('sonar-token')
+        SONAR_TOKEN = credentials('sonar-token') // your SonarQube token credential ID
+        IMAGE_NAME = 'adarshalva/fullstack-todo-backend'
+        PATH = "/usr/local/bin:/usr/bin:/bin"  // include docker and sh paths
+        JAVA_HOME = "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home" // set to Java 21 path
     }
 
     stages {
         stage('Checkout') {
             steps {
-                checkout scm
+                git url: 'https://github.com/adarshalva/fullstack-ci-cd.git', branch: 'main'
             }
         }
 
         stage('SonarQube Analysis') {
             steps {
-                withSonarQubeEnv('sq1') {
-                    script {
-                        def scannerHome = tool 'Sonar_Scanner'
-                        sh """${scannerHome}/bin/sonar-scanner \
-                            -Dsonar.projectKey=fullstack-app \
-                            -Dsonar.sources=. \
-                            -Dsonar.host.url=${env.SONAR_HOST_URL} \
-                            -Dsonar.login=${SONAR_TOKEN}
-                        """
-                    }
+                withSonarQubeEnv('sq1') {  // Make sure 'sq1' is your SonarQube server name in Jenkins config
+                    sh """
+                        ${tool 'Sonar_Scanner'}/bin/sonar-scanner \
+                        -Dsonar.projectKey=fullstack-ci-cd \
+                        -Dsonar.sources=. \
+                        -Dsonar.login=$SONAR_TOKEN
+                    """
                 }
             }
         }
 
         stage('Build & Push Docker Image') {
             steps {
-                script {
-                    docker.withRegistry("https://${env.DOCKER_REGISTRY}", 'docker-registry-credentials') {
-                        def appImage = docker.build("${env.DOCKER_REGISTRY}/${env.IMAGE_NAME}:${env.IMAGE_TAG}")
-                        appImage.push()
-                    }
-                }
+                sh """
+                    docker build -t ${IMAGE_NAME}:latest .
+                    docker push ${IMAGE_NAME}:latest
+                """
             }
         }
 
         stage('Trivy Vulnerability Scan') {
             steps {
-                script {
-                    sh """
-                        mkdir -p trivy-bin  
-                        curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b trivy-bin
-                        ./trivy-bin/trivy image --exit-code 0 --severity HIGH,CRITICAL ${env.DOCKER_REGISTRY}/${env.IMAGE_NAME}:${env.IMAGE_TAG} || true
-                    """
-                }
+                sh """
+                    trivy image --exit-code 1 --severity HIGH,CRITICAL ${IMAGE_NAME}:latest
+                """
             }
         }
 
         stage('Run Docker Container') {
             steps {
                 sh """
-                    docker stop my-sample-app || true
-                    docker rm my-sample-app || true
-                    docker run -d -p 4000:4000 --name my-sample-app ${env.DOCKER_REGISTRY}/${env.IMAGE_NAME}:${env.IMAGE_TAG}
+                    docker rm -f fullstack-app || true
+                    docker run -d --name fullstack-app -p 8080:8080 ${IMAGE_NAME}:latest
                 """
             }
         }
@@ -74,13 +58,10 @@ pipeline {
     post {
         always {
             echo 'Cleaning up...'
-            script {
-                sh "docker rm -f my-sample-app || true"
-            }
+            sh 'docker rm -f fullstack-app || true'
         }
     }
 }
-
 
 
 
