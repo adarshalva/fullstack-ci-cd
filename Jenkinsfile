@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        SONAR_TOKEN = credentials('sonar-token') // SonarQube token
+        SONAR_TOKEN = credentials('sonar-token')
         IMAGE_NAME = 'adarshalva/fullstack-todo-backend'
         PATH = "/usr/local/bin:/usr/bin:/bin"
         JAVA_HOME = "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home"
@@ -19,10 +19,10 @@ pipeline {
             steps {
                 withSonarQubeEnv('sq1') {
                     sh """
-                        ${tool 'Sonar_Scanner'}/bin/sonar-scanner \
+                        ${tool('Sonar_Scanner')}/bin/sonar-scanner \
                         -Dsonar.projectKey=fullstack-ci-cd \
                         -Dsonar.sources=. \
-                        -Dsonar.login=$SONAR_TOKEN
+                        -Dsonar.login=${SONAR_TOKEN}
                     """
                 }
             }
@@ -31,7 +31,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 dir('backend') {
-                    sh 'docker build -t $IMAGE_NAME .'
+                    sh 'docker build -t ${IMAGE_NAME} .'
                 }
             }
         }
@@ -40,7 +40,7 @@ pipeline {
             steps {
                 sh """
                     docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
-                    -v $(pwd):/root/.cache/ aquasec/trivy:latest \
+                    -v \$(pwd):/root/.cache/ aquasec/trivy:latest \
                     image --exit-code 1 --severity HIGH,CRITICAL \
                     -f table -o trivy-report.txt ${IMAGE_NAME}:latest
                 """
@@ -65,8 +65,6 @@ pipeline {
         }
     }
 }
-
-
 
 
 
