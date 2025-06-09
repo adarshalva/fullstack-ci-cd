@@ -30,23 +30,23 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                // Run docker build inside backend folder
                 dir('backend') {
                     sh 'docker build -t $IMAGE_NAME .'
                 }
             }
         }
 
-       stage('Trivy Vulnerability Scan') {
-    steps {
-        script {
-            docker.image('aquasec/trivy:latest').inside {
+        stage('Trivy Vulnerability Scan') {
+            agent {
+                docker {
+                    image 'aquasec/trivy:latest'
+                    args '-v /var/run/docker.sock:/var/run/docker.sock'
+                }
+            }
+            steps {
                 sh "trivy image --exit-code 1 --severity HIGH,CRITICAL ${IMAGE_NAME}:latest"
             }
         }
-    }
-}
-
 
         stage('Run Docker Container') {
             steps {
@@ -65,6 +65,7 @@ pipeline {
         }
     }
 }
+
 
 
 
