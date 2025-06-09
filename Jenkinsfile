@@ -33,6 +33,8 @@ pipeline {
                 // Run docker build inside backend folder
                 dir('backend') {
                     sh 'docker build -t $IMAGE_NAME .'
+                }
+            }
         }
 
         stage('Trivy Vulnerability Scan') {
