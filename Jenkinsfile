@@ -37,13 +37,16 @@ pipeline {
             }
         }
 
-        stage('Trivy Vulnerability Scan') {
-            steps {
-                sh """
-                    trivy image --exit-code 1 --severity HIGH,CRITICAL ${IMAGE_NAME}:latest
-                """
+       stage('Trivy Vulnerability Scan') {
+    steps {
+        script {
+            docker.image('aquasec/trivy:latest').inside {
+                sh "trivy image --exit-code 1 --severity HIGH,CRITICAL ${IMAGE_NAME}:latest"
             }
         }
+    }
+}
+
 
         stage('Run Docker Container') {
             steps {
