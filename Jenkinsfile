@@ -62,12 +62,9 @@ pipeline {
 
     post {
         always {
-            // Wrap in node block so 'sh' has workspace context
-            node {
-                echo 'Cleaning up...'
-                script {
-                    sh "docker rm -f ${env.IMAGE_NAME} || true"
-                }
+            echo 'Cleaning up...'
+            script {
+                sh "docker rm -f ${env.IMAGE_NAME} || true"
             }
         }
     }
